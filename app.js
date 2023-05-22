@@ -6,8 +6,8 @@ const proxy = httpProxy.createProxyServer();
 
 // Create an HTTP server
 const server = http.createServer((req, res) => {
-  // Check if the 'API_KEY' header exists and has the correct value
-  if (req.headers.api_key !== 'AN_API_KEY') {
+  // Check if the 'apikey' header exists and has the correct value
+  if (req.headers.apikey !== 'AN_API_KEY') {
     res.writeHead(401, { 'Content-Type': 'text/plain' });
     res.end('Unauthorized');
     return;
