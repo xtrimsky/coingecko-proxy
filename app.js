@@ -1,28 +1,45 @@
 const http = require('http');
-const httpProxy = require('http-proxy');
+const axios = require('axios');
+const express = require('express');
 
-// Create a new HTTP proxy server
-const proxy = httpProxy.createProxyServer();
+const app = express();
 
-// Create an HTTP server
-const server = http.createServer((req, res) => {
+// Define a route for the proxy
+app.all('*', async (req, res) => {
   // Check if the 'apikey' header exists and has the correct value
   if (req.headers.apikey !== 'AN_API_KEY') {
-    res.writeHead(401, { 'Content-Type': 'text/plain' });
-    res.end('Unauthorized');
+    res.status(401).send('Unauthorized');
     return;
   }
 
-  // Proxy the request to the CoinGecko API
-  proxy.web(req, res, {
-    target: 'https://api.coingecko.com',
-    changeOrigin: true,
-    prependPath: '/api/v3',
-  });
+  try {
+    const targetUrl = 'http://api.coingecko.com/api/v3' + req.originalUrl;
+    const response = await axios({
+      method: req.method,
+      url: targetUrl,
+      headers: {
+        ...req.headers,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.131 Safari/537.36',
+        'Accept': 'application/json',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive',
+        'Host': 'api.coingecko.com',
+        'Referer': 'http://api.coingecko.com',
+      },
+      data: req.body,
+    });
+
+    res.status(response.status).send(response.data);
+  } catch (error) {
+    if (error.response) {
+      res.status(error.response.status).send(error.response.data);
+    } else {
+      res.status(500).send('Internal Server Error');
+    }
+  }
 });
 
 // Start the server on port 3000
-server.listen(3000, () => {
+http.createServer(app).listen(3000, () => {
   console.log('Proxy server listening on port 3000');
 });
-
